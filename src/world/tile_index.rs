@@ -1,3 +1,5 @@
+use crate::{error::GameError, prelude::Result};
+
 #[derive(Debug, Clone, Copy)]
 pub enum TileIndex {
     ShoreTopLeft = 0,
@@ -22,23 +24,23 @@ impl TileIndex {
         top_right: char,
         bottom_left: char,
         bottom_right: char,
-    ) -> TileIndex {
+    ) -> Result<TileIndex> {
         match (top_left, top_right, bottom_left, bottom_right) {
-            ('G', 'G', 'G', 'W') => TileIndex::ShoreTopLeft,
-            ('G', 'G', 'W', 'W') => TileIndex::ShoreTopMiddle,
-            ('G', 'G', 'W', 'G') => TileIndex::ShoreTopRight,
-            ('G', 'W', 'G', 'W') => TileIndex::ShoreLeft,
-            ('W', 'W', 'W', 'W') => TileIndex::Water,
-            ('W', 'G', 'W', 'G') => TileIndex::ShoreRight,
-            ('G', 'W', 'G', 'G') => TileIndex::ShoreBottomLeft,
-            ('W', 'W', 'G', 'G') => TileIndex::ShoreBottomMiddle,
-            ('W', 'G', 'G', 'G') => TileIndex::ShoreBottomRight,
-            ('W', 'W', 'W', 'G') => TileIndex::IslandTopLeft,
-            ('W', 'W', 'G', 'W') => TileIndex::IslandTopRight,
-            ('G', 'G', 'G', 'G') => TileIndex::Grass,
-            ('W', 'G', 'W', 'W') => TileIndex::IslandBottomLeft,
-            ('G', 'W', 'W', 'W') => TileIndex::IslandBottomRight,
-            _ => unreachable!(),
+            ('G', 'G', 'G', 'W') => Ok(TileIndex::ShoreTopLeft),
+            ('G', 'G', 'W', 'W') => Ok(TileIndex::ShoreTopMiddle),
+            ('G', 'G', 'W', 'G') => Ok(TileIndex::ShoreTopRight),
+            ('G', 'W', 'G', 'W') => Ok(TileIndex::ShoreLeft),
+            ('W', 'W', 'W', 'W') => Ok(TileIndex::Water),
+            ('W', 'G', 'W', 'G') => Ok(TileIndex::ShoreRight),
+            ('G', 'W', 'G', 'G') => Ok(TileIndex::ShoreBottomLeft),
+            ('W', 'W', 'G', 'G') => Ok(TileIndex::ShoreBottomMiddle),
+            ('W', 'G', 'G', 'G') => Ok(TileIndex::ShoreBottomRight),
+            ('W', 'W', 'W', 'G') => Ok(TileIndex::IslandTopLeft),
+            ('W', 'W', 'G', 'W') => Ok(TileIndex::IslandTopRight),
+            ('G', 'G', 'G', 'G') => Ok(TileIndex::Grass),
+            ('W', 'G', 'W', 'W') => Ok(TileIndex::IslandBottomLeft),
+            ('G', 'W', 'W', 'W') => Ok(TileIndex::IslandBottomRight),
+            _ => Err(GameError::new("Tile index without a correct format")),
         }
     }
 }

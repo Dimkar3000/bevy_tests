@@ -138,7 +138,7 @@ fn from_file(filename: &str) -> Result<Vec<Vec<TileIndex>>> {
                 top_right,
                 bottom_left,
                 bottom_right,
-            ));
+            )?);
         }
         result.push(row_vec);
     }

@@ -3,6 +3,12 @@ use std::{error::Error, fmt::Display};
 #[derive(Debug)]
 pub struct GameError(pub String);
 
+impl GameError {
+    pub fn new<'a>(text: impl Into<String>) -> Self {
+        Self(text.into())
+    }
+}
+
 impl Display for GameError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
