@@ -55,7 +55,7 @@ pub fn create_world(
                     },
                 ),
                 Tile,
-                Transform::from_xyz(col_index as f32 * height, -(row_index as f32 * width), 0.),
+                Transform::from_xyz(col_index as f32 * height, (row_index as f32 * width), 0.),
             ));
         }
     }

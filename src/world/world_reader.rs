@@ -36,7 +36,7 @@ impl WorldReader {
             .collect();
 
         if let Some(path) = self.save_path {
-            result = from_file(&path, self.base_row, self.base_col, result)?;
+            result = tiles_from_file(&path, self.base_row, self.base_col, result)?;
         }
 
         Ok(result)
@@ -82,7 +82,7 @@ impl WorldReader {
     }
 }
 
-fn from_file(
+fn tiles_from_file(
     filename: &str,
     base_row: usize,
     base_col: usize,
