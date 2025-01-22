@@ -1,35 +1,48 @@
-use std::{
-    fs::File,
-    io::{BufRead, BufReader},
-};
-
 use bevy::prelude::*;
 
-use crate::{error::GameError, prelude::Result};
+use super::{world_reader::WorldReader, GameConfiguration, Tile, TileOutline, WorldState};
 
-use super::{tile_index::TileIndex, Tile, TileOutline, WorldState};
+pub fn read_configuration(mut commands: Commands) {
+    commands.insert_resource(GameConfiguration {
+        atlas: "atlas.png".to_string(),
+        outline: "outline.png".to_string(),
+        world: "world.txt".to_string(),
+        tile_size: 16,
+        atlas_rows: 6,
+        atlas_cols: 3,
+    });
+}
 
 pub fn create_world(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
+    game_config: Res<GameConfiguration>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
-    let image_handle = asset_server.load("atlas.png");
-    let outline_handle = asset_server.load("outline.png");
-    let atlas_layout = TextureAtlasLayout::from_grid(UVec2::splat(16), 3, 6, None, None);
+    let image_handle = asset_server.load(&game_config.atlas);
+    let outline_handle = asset_server.load(&game_config.outline);
+    let atlas_layout = TextureAtlasLayout::from_grid(
+        UVec2::splat(game_config.tile_size),
+        game_config.atlas_cols,
+        game_config.atlas_rows,
+        None,
+        None,
+    );
     let layout = texture_atlas_layouts.add(atlas_layout);
     commands.spawn((
         TileOutline,
         Sprite::from_image(outline_handle.clone()),
         Transform::IDENTITY,
     ));
+
+    let reader = WorldReader::from_file(&game_config.world).unwrap_or_default();
     let world = WorldState {
-        tiles: from_file("world.txt").unwrap(),
+        tiles: reader.into_tiles().unwrap(),
         image_handle,
         layout,
     };
-    let width = 16.;
-    let height = 16.;
+    let width = game_config.tile_size as f32;
+    let height = game_config.tile_size as f32;
 
     for (row_index, row) in world.tiles.iter().enumerate() {
         for (col_index, tile) in row.iter().enumerate() {
@@ -52,6 +65,7 @@ pub fn create_world(
 
 pub fn update_tile(
     windows: Query<&Window>,
+    game_config: Res<GameConfiguration>,
     cameras: Query<(&Camera, &GlobalTransform)>,
     mut sprites: Query<(&mut Sprite, &Transform), Without<Outline>>,
 ) {
@@ -63,14 +77,20 @@ pub fn update_tile(
         .map(|ray| ray.unwrap().origin.truncate())
     {
         for (mut tile, transform) in &mut sprites {
-            let x = transform.translation.x + 8.0;
-            let y = transform.translation.y + 8.0;
+            let x = transform.translation.x + (game_config.tile_size / 2) as f32;
+            let y = transform.translation.y + (game_config.tile_size / 2) as f32;
             if x >= world_position.x
-                && x <= world_position.x + 16.
+                && x <= world_position.x + game_config.tile_size as f32
                 && y >= world_position.y
-                && y <= world_position.y + 16.
+                && y <= world_position.y + game_config.tile_size as f32
             {
-                tile.texture_atlas.as_mut().unwrap().index += 1;
+                if let Some(atlas) = tile.texture_atlas.as_mut() {
+                    let mut new_index = atlas.index + 1;
+                    if new_index >= (game_config.atlas_rows * game_config.atlas_cols) as usize {
+                        new_index = 0;
+                    }
+                    atlas.index = new_index;
+                }
                 return;
             }
         }
@@ -106,42 +126,4 @@ pub fn move_outline(
         }
         outline.translation.z = -1.;
     }
-}
-
-fn from_file(filename: &str) -> Result<Vec<Vec<TileIndex>>> {
-    let file = File::open(filename)?;
-    let reader = BufReader::new(file);
-    let lines: Vec<Vec<char>> = reader
-        .lines()
-        .filter_map(|x| x.ok().map(|x| x.chars().collect()))
-        .collect();
-
-    let height = lines.len();
-    if height == 0 {
-        return Err(GameError("Map was empty".to_string()));
-    }
-
-    let width = lines[0].len();
-    if width == 0 {
-        return Err(GameError("Width of the map is 0".to_string()));
-    }
-    let mut result = Vec::with_capacity(height / 2);
-    for row in (0..height).step_by(2) {
-        let mut row_vec = Vec::with_capacity(width / 2);
-        for col in (0..width).step_by(2) {
-            let top_left = lines[row][col];
-            let top_right = lines[row][col + 1];
-            let bottom_left = lines[row + 1][col];
-            let bottom_right = lines[row + 1][col + 1];
-            row_vec.push(TileIndex::new(
-                top_left,
-                top_right,
-                bottom_left,
-                bottom_right,
-            )?);
-        }
-        result.push(row_vec);
-    }
-
-    Ok(result)
 }

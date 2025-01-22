@@ -58,7 +58,9 @@ fn camera_setup(mut commands: Commands, camera_settings: Res<CameraSettings>) {
             ..OrthographicProjection::default_2d()
         }),
         CameraSpeed(Vec3::ZERO, Timer::from_seconds(0.0, TimerMode::Once)),
-        Transform::from_xyz(0.0, 0.0, -5.0).looking_at(Vec3::ZERO, Vec3::Y),
+        Transform::from_xyz(0.0, 0.0, -5.0)
+            .looking_at(Vec3::ZERO, Vec3::Y)
+            .with_translation(Vec3::new(300., -300., 0.)),
     ));
 }
 

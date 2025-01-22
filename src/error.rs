@@ -1,10 +1,10 @@
-use std::{error::Error, fmt::Display};
+use std::{error::Error, fmt::Display, num::ParseIntError};
 
 #[derive(Debug)]
 pub struct GameError(pub String);
 
 impl GameError {
-    pub fn new<'a>(text: impl Into<String>) -> Self {
+    pub fn new(text: impl Into<String>) -> Self {
         Self(text.into())
     }
 }
@@ -31,6 +31,11 @@ impl Error for GameError {
 
 impl From<std::io::Error> for GameError {
     fn from(value: std::io::Error) -> Self {
+        GameError(value.to_string())
+    }
+}
+impl From<ParseIntError> for GameError {
+    fn from(value: ParseIntError) -> Self {
         GameError(value.to_string())
     }
 }

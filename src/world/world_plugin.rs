@@ -6,7 +6,7 @@ pub struct WorldPlugin;
 
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, create_world)
+        app.add_systems(Startup, (read_configuration, create_world).chain())
             .add_systems(FixedUpdate, move_outline)
             .add_systems(
                 Update,
