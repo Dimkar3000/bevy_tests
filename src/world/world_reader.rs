@@ -77,7 +77,6 @@ impl WorldReader {
         }
 
         world.save_path = lines.next().map(|x| x.unwrap_or_default());
-        dbg!(&world);
         Ok(world)
     }
 }

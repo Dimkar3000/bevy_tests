@@ -9,7 +9,13 @@ const SLOW_DOWN_FACTOR: f32 = 2.0;
 const CAMERA_MOVEMENT_EASE_OUT_SECS: f32 = 0.05;
 
 #[derive(Component)]
+pub struct TileOutline;
+
+#[derive(Component)]
 struct CameraSpeed(Vec3, Timer);
+
+#[derive(Component)]
+pub struct EditorCamera;
 
 #[derive(Debug, Resource)]
 pub struct CameraSettings {
@@ -37,14 +43,30 @@ impl Plugin for GameCameraPlugin {
             movement_max_speed: STARTING_SPEED,
         })
         .add_systems(Startup, camera_setup)
-        .add_systems(Update, (zoom, camera_movement));
+        .add_systems(Update, (zoom, camera_movement))
+        .add_systems(FixedUpdate, move_outline);
     }
 }
 
-fn camera_setup(mut commands: Commands, camera_settings: Res<CameraSettings>) {
+fn camera_setup(
+    mut commands: Commands,
+    camera_settings: Res<CameraSettings>,
+    asset_server: Res<AssetServer>,
+) {
+    let outline_handle = asset_server.load("outline.png");
     commands.spawn((
-        Name::new("Camera"),
+        TileOutline,
+        Sprite::from_image(outline_handle.clone()),
+        Transform::IDENTITY,
+    ));
+
+    commands.spawn((
         Camera2d,
+        Camera {
+            order: 2,
+            ..Default::default()
+        },
+        EditorCamera,
         Msaa::Off, // Fixes artifacs on zoom between the tiles
         Projection::Orthographic(OrthographicProjection {
             // We can set the scaling mode to FixedVertical to keep the viewport height constant as its aspect ratio changes.
@@ -68,10 +90,20 @@ fn camera_movement(
     time: Res<Time>,
     camera_settings: Res<CameraSettings>,
     keys: Res<ButtonInput<KeyCode>>,
-    query: Single<(&Camera2d, &mut CameraSpeed, &mut Transform)>,
+    query: Single<(&Camera2d, &mut Camera, &mut CameraSpeed, &mut Transform), With<EditorCamera>>,
 ) {
+    if keys.just_released(KeyCode::KeyE) {
+        let mut camera = query.into_inner().1;
+        camera.is_active = !camera.is_active;
+        return;
+    }
+
     let delta = time.delta_secs();
-    let (_, mut current_speed, mut transform) = query.into_inner();
+    let (_, camera, mut current_speed, mut transform) = query.into_inner();
+
+    if !camera.is_active {
+        return;
+    }
     current_speed.1.tick(time.delta());
 
     let mut movement_vec = Vec3::ZERO;
@@ -96,10 +128,6 @@ fn camera_movement(
         let t = current_speed.1.elapsed_secs() / camera_settings.movement_ease_out_time;
         let besier = bezier_ease_out(t);
 
-        dbg!(t);
-        dbg!(current_speed.1.elapsed_secs());
-        dbg!(besier);
-
         current_speed.0 = current_speed.0 - current_speed.0.normalize() * SLOW_DOWN_FACTOR * besier;
         transform.translation += current_speed.0 * delta;
         return;
@@ -119,7 +147,7 @@ fn bezier_ease_out(t: f32) -> f32 {
 }
 
 fn zoom(
-    camera: Single<&mut Projection, With<Camera>>,
+    camera: Single<&mut Projection, With<EditorCamera>>,
     camera_settings: Res<CameraSettings>,
     mouse_wheel_input: Res<AccumulatedMouseScroll>,
 ) {
@@ -141,5 +169,46 @@ fn zoom(
             );
         }
         _ => unreachable!(),
+    }
+}
+
+pub fn move_outline(
+    query: Single<&mut Transform, With<TileOutline>>,
+    windows: Query<&Window>,
+    cameras: Query<(&Camera, &GlobalTransform), With<EditorCamera>>,
+    sprites: Query<&Transform, (With<Sprite>, Without<TileOutline>)>,
+) {
+    let mut outline = query.into_inner();
+    let window = windows.get_single();
+
+    if window.is_err() {
+        return;
+    }
+    let window = window.unwrap();
+
+    let (camera, position) = cameras.single();
+    if !camera.is_active {
+        outline.translation.z = -1.;
+        return;
+    }
+    if let Some(Ok(world_position)) = window
+        .cursor_position()
+        .map(|cursor| camera.viewport_to_world(position, cursor))
+        .map(|ray| ray.map(|x| x.origin.truncate()))
+    {
+        for tile in sprites.iter() {
+            let x = tile.translation.x + 8.0;
+            let y = tile.translation.y + 8.0;
+            if x >= world_position.x
+                && x <= world_position.x + 16.
+                && y >= world_position.y
+                && y <= world_position.y + 16.
+            {
+                outline.translation = tile.translation;
+                outline.translation.z = 1.;
+                return;
+            }
+        }
+        outline.translation.z = -1.;
     }
 }
