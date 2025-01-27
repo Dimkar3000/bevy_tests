@@ -8,7 +8,6 @@ mod world_systems;
 
 pub use world_plugin::WorldPlugin;
 
-
 #[derive(Resource)]
 pub struct GameConfiguration {
     atlas: String,
