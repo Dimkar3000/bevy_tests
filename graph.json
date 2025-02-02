@@ -1,0 +1,154 @@
+{
+  "animations": [
+    {
+      "standingFront": {
+        "start": 0,
+        "count": 6,
+        "flip_x": false,
+        "animation_duration": 1.0
+      },
+      "standingLeft": {
+        "start": 6,
+        "count": 6,
+        "flip_x": false,
+        "animation_duration": 1.0
+      },
+      "standingRight": {
+        "start": 6,
+        "count": 6,
+        "flip_x": true,
+        "animation_duration": 1.0
+      },
+      "standingBack": {
+        "start": 12,
+        "count": 6,
+        "flip_x": false,
+        "animation_duration": 1.0
+      },
+      "wakingFront": {
+        "start": 18,
+        "count": 6,
+        "flip_x": false,
+        "animation_duration": 1.0
+      },
+      "wakingRight": {
+        "start": 24,
+        "count": 6,
+        "flip_x": false,
+        "animation_duration": 1.0
+      },
+      "wakingLeft": {
+        "start": 24,
+        "count": 6,
+        "flip_x": true,
+        "animation_duration": 1.0
+      },
+      "wakingBack": {
+        "start": 30,
+        "count": 6,
+        "flip_x": false,
+        "animation_duration": 1.0
+      },
+      "attackingFront": {
+        "start": 36,
+        "count": 4,
+        "flip_x": false,
+        "animation_duration": 1.0
+      },
+      "attackingLeft": {
+        "start": 42,
+        "count": 4,
+        "flip_x": false,
+        "animation_duration": 1.0
+      },
+      "attackingRight": {
+        "start": 42,
+        "count": 4,
+        "flip_x": true,
+        "animation_duration": 1.0
+      },
+      "attackingBack": {
+        "start": 48,
+        "count": 4,
+        "flip_x": false,
+        "animation_duration": 1.0
+      }
+    }
+  ],
+  "variables": {
+    "directionX": "right,left,none",
+    "directionY": "up,down,none",
+    "walking": false,
+    "attaking": false
+  },
+  "switches": [
+    {
+      "name": "switchOnDirectionWalking",
+      "variables": ["directionX", "directionY"],
+      "cases": [
+        ["right", "up"],
+        ["right", "down"],
+        ["left", "up"],
+        ["left", "down"],
+        ["none", "up"],
+        ["none", "down"]
+      ],
+      "results": [
+        "wakingRight",
+        "wakingRight",
+        "wakingLeft",
+        "wakingLeft",
+        "wakingBack",
+        "wakingFront"
+      ]
+    },
+    {
+      "name": "switchOnDirectionStanding",
+      "cases": [
+        ["right", "up"],
+        ["right", "down"],
+        ["left", "up"],
+        ["left", "down"]
+      ],
+      "results": [
+        "standingRight",
+        "standingRight",
+        "standingLeft",
+        "standingLeft",
+        "standingBack",
+        "standingFront"
+      ]
+    }
+  ],
+
+  "conditions": [
+    {
+      "name": "decideOnWalk",
+      "variables": ["walking"],
+      "values": [true],
+      "success": "switchOnDirectionWalking",
+      "failure": "switchOnDirectionStanding"
+    }
+  ],
+
+  "setters": [
+    {
+      "name": "setAttackingFalse",
+      "variables": ["attacking"],
+      "values": [false],
+      "next": "decideOnWalk"
+    }
+  ],
+
+  "states": [
+    { "current": "standingFront", "next": "loop" },
+    { "current": "standingSide", "next": "loop" },
+    { "current": "standingBack", "next": "loop" },
+    { "current": "wakingFront", "next": "loop" },
+    { "current": "wakingSide", "next": "loop" },
+    { "current": "wakingBack", "next": "loop" },
+    { "current": "attackingFront", "next": "setAttackingFalse" },
+    { "current": "attackingSide", "next": "setAttackingFalse" },
+    { "current": "attackingBack", "next": "setAttackingFalse" }
+  ]
+}

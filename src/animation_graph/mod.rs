@@ -1,28 +1,10 @@
 use std::{sync::Arc, time::Duration};
 
+use crate::prelude::*;
 use bevy::{prelude::*, utils::hashbrown::HashMap};
 
-#[derive(Debug)]
-enum NodeType {
-    Root(usize),                  // index of the first node
-    State(Arc<str>, usize, bool), // name of state and index of the next node, the node is locking or not base on the last bool
-    Switch {
-        variables: Vec<usize>,     // array on indicies in the variables vector
-        cases: Vec<Vec<Variable>>, // index of variable value to check against and the values that they should have in order to return true
-        result: Vec<usize>,        // the index of the node we should go if we return true.
-    },
-    Setter(Vec<usize>, Vec<Variable>, usize), // Set the variables to the values defined
-}
-
-impl NodeType {
-    fn is_locking(&self) -> bool {
-        match self {
-            NodeType::State(_, _, locking) => *locking,
-            NodeType::Setter(..) => true,
-            _ => false,
-        }
-    }
-}
+pub mod node_type;
+pub mod variable;
 
 // starting index and count
 #[derive(Debug)]
@@ -31,31 +13,6 @@ pub struct CharacterAnimation {
     pub count: usize,
     pub flip_x: bool,
     pub animation_duration: f32, // Total time to finish the animation
-}
-
-#[derive(Debug, Clone)]
-pub enum Variable {
-    Bool(bool),
-    Enum(String),
-    Any,
-}
-
-impl Variable {
-    pub fn is_any(&self) -> bool {
-        matches!(self, Variable::Any)
-    }
-}
-
-impl PartialEq for Variable {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Self::Bool(l0), Self::Bool(r0)) => l0 == r0,
-            (Self::Enum(l0), Self::Enum(r0)) => l0 == r0,
-            (Variable::Any, _) => true,
-            (_, Variable::Any) => true,
-            _ => core::mem::discriminant(self) == core::mem::discriminant(other),
-        }
-    }
 }
 
 impl CharacterAnimation {

@@ -1,4 +1,5 @@
-use animation_graph::{CharacterAnimationGraph, Variable};
+use crate::prelude::*;
+
 use bevy::{prelude::*, render::camera::ScalingMode};
 use camera::{CameraSettings, EditorCamera, GameCameraPlugin};
 use world::WorldPlugin;
